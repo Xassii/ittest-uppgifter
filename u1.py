@@ -22,7 +22,7 @@ num3 = None
 if num3 == None:
     print('None')
 
-#---------------
+#--------------- change
 
 is_sunny = True
 is_warm = False
