@@ -5,7 +5,7 @@ Created on Thu Feb 13 09:20:16 2025
 @author: amanda
 """
 
-import random
+import random, datetime
 
 num = 30
 num2 = 30
@@ -51,12 +51,12 @@ else:
 
 #---------------
 
-vardagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
-day = 'Onsdag'
-tid = 17
+today = datetime.datetime.now()
+day = today.weekday()
+tid = today.hour
 
-vardag_open = day in vardagar and tid > 9 and tid < 18
-helg_open = day in ['Lördag', 'Söndag'] and tid > 10 and tid < 16
+vardag_open = day <= 4 and tid > 9 and tid < 18
+helg_open = day >= 5 and tid > 10 and tid < 16
 
 if vardag_open or helg_open:
     print('Affären är öppen!')
