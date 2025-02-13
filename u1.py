@@ -48,3 +48,33 @@ if guess == random_number:
     print('Correct!')
 else:
     print(f'Wrong. Nummber was {random_number}.')
+
+#---------------
+
+vardagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag']
+day = 'Onsdag'
+tid = 17
+
+vardag_open = day in vardagar and tid > 9 and tid < 18
+helg_open = day in ['Lördag', 'Söndag'] and tid > 10 and tid < 16
+
+if vardag_open or helg_open:
+    print('Affären är öppen!')
+else:
+    print('Afärren är stängd.')
+
+#---------------
+
+ticket = input('Har du biljet? ').lower()
+age = int(input('Hur gammal är du? '))
+
+if ticket == 'ja' and age >= 18:
+    print('Du kom in!')
+else:
+    print('Det är olagligt')
+
+#---------------
+
+for i in range(10, 0, -1):
+    print(i)
+print('START!')
