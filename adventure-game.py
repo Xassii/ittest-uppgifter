@@ -223,7 +223,7 @@ def play(players, tiles, monster): # To long
     dead = []
     print(f'\n\n----------- oOo -----------')
     print(at.start)
-    print_map(tiles)
+    #print_map(tiles)
     
     while True:
         for player in players:
@@ -264,6 +264,8 @@ def play(players, tiles, monster): # To long
                 else:
                     text = random.choice(at.attack)
                     print(f"{text}{damage} points of damage.")
+            input()
+        
         if at_monster:
             damage = random.randint(1, 6)
             at_monster[0].injured(damage)
@@ -279,6 +281,7 @@ def play(players, tiles, monster): # To long
                 at_monster.remove(at_monster[0])
                 if not players:
                     return False, players, dead
+            input()
 
 
 if __name__ == '__main__':
