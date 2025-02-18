@@ -1,14 +1,61 @@
-import random
+import random, math
 import adventuretexts as at
 
 class player:
-    def __init__(self, name, health):
+    def __init__(self, name, role):
         self.name = name
-        self.health = health
+        self.role = role
+        self.alive = True
+        self.max_health = self.__decide_health()
+        self.health = self.max_health
         self.possition = None
+        self.cooldown = 0
+        self.resistance = 0
+    
+    def __decide_health(self):
+        if self.role == 'Paladin':
+            return 40 + random.randint(0, 10)
+        elif self.role == 'Warior':
+            return 25 + random.randint(0, 10)
+        elif self.role == 'Warlock':
+            return 10 + random.randint(0, 10)
     
     def injured(self, damage):
-        self.health -= damage
+        if self.resistance:
+            self.health -= math.floor(damage / 2)
+            print(f'{self.name} resisted some of the damage.')
+        else:
+            self.health -= damage
+        
+        if self.health <= 0:
+            print(f'{self.name} died.')
+            self.alive = False
+    
+    def attack(self):
+        if self.role == 'Paladin':
+            return random.randint(1, 6)
+        elif self.role == 'Warior':
+            return random.randint(1, 6) + random.randint(1, 4)
+        elif self.role == 'Warlock':
+            return random.randint(1, 10) + random.randint(1, 10)
+    
+    def use_abillity(self, target):
+        if self.role == 'Paladin':
+            self.cooldown = 4
+            healed = random.randint(1, 4) + random.randint(1, 4)
+            target.health += healed
+            if target.health > target.max_health:
+                target.health = target.max_health
+                print(f'{target.name} is fully healed.')
+            else:
+                print(f'{target.name} got healed {healed} points.')
+        elif self.role == 'Warior':
+            self.cooldown = 3
+            print('You totes used your abillity') #TODO
+        elif self.role == 'Warlock':
+            self.cooldown = 6
+            target.resistance = 3
+            print(f'{target.name} feel invinceble.')
 
 
 class room:
@@ -38,16 +85,22 @@ def def_int_input(min, max, text=''):
 
 def create_players(num):
     players = []
+    roles = ['Paladin', 'Warior', 'Warlock']
     for i in range(num):
         name = input(f'\nName player {i + 1}: ')
-        text = f'How much health should {name} have? (10-50): '
-        health = def_int_input(10, 50, text)
-        players.append(player(name, health))
+        text = f'What role shuld {name} be?\n1 - Paladin'
+        text += ', 2 - Warior or 3 - Warlock: '
+        role_num = def_int_input(1, 3, text) - 1
+        players.append(player(name, roles[role_num]))
+        
+        text = f'{players[i].name} is a {players[i].role} with'
+        text += f' {players[i].max_health} points of health.'
+        print(text)
     
     return players
 
 
-def add_tiles(num, exist, neigbor): #This aint great
+def add_tiles(num, exist, neigbor):
     tiles = []
     for i in range(num):
         next_room = random.choice(neigbor)
@@ -134,41 +187,51 @@ def create_tiles(): #This aint great
 
 
 def setupp():
+    print(at.instructions)
     player_num = def_int_input(1, 4, 'How many players? (1-4): ')
     players = create_players(player_num)
     
     monster_health = 0
-    for i in players:
-        monster_health += i.health
-    if player_num > 1:
-        monster_health = int((monster_health / player_num) * (player_num - 1))
+    if len(players) > 1:
+        for pc in players:
+            monster_health += pc.health * 2
     else:
-        monster_health = int(monster_health / 2)
+        monster_health += math.floor(players[0].health * 1.5)
+    #if player_num > 1:
+    #    monster_health = int((monster_health / player_num) * (player_num - 1))
+    #else:
+    #    monster_health = int(monster_health / 2)
     
     tiles = create_tiles()
     
-    for player in players:
-        player.possition = tiles[0]
+    for pc in players:
+        pc.possition = tiles[0]
     
     return players, tiles, monster_health
 
 
-def get_directions(dir_list, monster, player):
+def get_directions(dir_list, monster, pc):
     directions = ''
-    if monster < 1 and player.possition.type == 'L':
+    if monster < 1 and pc.possition.type == 'L':
         directions = ', '.join(dir_list)
         directions += ' and you can leave'
         dir_list.append('Leave')
-    elif monster > 0 and player.possition.type == 'M':
+    elif monster > 0 and pc.possition.type == 'M':
         directions = ', '.join(dir_list)
         directions += ' and you can fight the monster.'
-        directions += f' You have {player.health} points of health'
+        directions += f' You have {pc.health} points of health'
         dir_list.append('Fight')
     elif len(dir_list) == 1:
         directions = dir_list[0]
     else:
         directions = ', '.join(dir_list[:-1])
         directions += ' and ' + dir_list[-1]
+    
+    if not pc.cooldown:
+        directions += '. You may also use your abillity'
+        dir_list.append('Abillity')
+    else:
+        pc.cooldown -= 1
     
     return dir_list, directions
 
@@ -217,87 +280,190 @@ def print_map(rooms):
         print(' '.join(i))
 
 
+def pcs_at_pc_pos(players, pc):
+    together = []
+    for other_pc in players:
+        same_place = pc.possition == other_pc.possition
+        if other_pc != pc and same_place:
+            together.append(other_pc)
+    
+    return together
+
+
+def move_pc(pc, players, at_m, encounter, towards, monster):
+    if at_m and pc.possition.type == 'M':
+        at_m.remove(pc)
+    pc.possition = pc.possition.doors[towards]
+    
+    together = pcs_at_pc_pos(players, pc)
+    
+    if not encounter and pc.possition.type == 'M':
+        print(random.choice(at.first))
+        encounter = True
+    else:
+        text = pc.possition.description
+        if len(together) > 2:
+            text += f' {together[0].name}, {together[1].name} and '
+            text += f'{together[2].name}' + random.choice(at.togeter)
+        if len(together) > 1:
+            text += f' {together[0].name} and {together[1].name}'
+            text += random.choice(at.togeter)
+        elif together:
+            text += f' {together[0].name}' + random.choice(at.meet)
+        
+        print(text)
+    
+    if monster > 0 and pc.possition.type == 'M':
+        at_m.append(pc)
+    
+    return at_m, encounter
+
+
+def use_abillity(players, pc):
+    together = pcs_at_pc_pos(players, pc)
+    if together:
+        text = 'Choose who to use your abillity on:\n'
+        for i, oter_pc in enumerate(together):
+            max = i + 2
+            text += f'{i+1} - {oter_pc.name}, '
+        text = text[:-2] + f' or {max} - yourself: '
+        
+        choise = def_int_input(1, max, text) - 1
+        if choise == max - 1:
+            pc.use_abillity(pc)
+        else:
+            pc.use_abillity(together[choise])
+    else:
+        pc.use_abillity(pc)
+
+
+def attack(pc, monster, at_m):
+    #print('You shake in your boots!')
+    damage = pc.attack()
+    monster -= damage
+    
+    if monster <= 0:
+        num = random.randint(0, len(at.finall) - 1)
+        print(at.finall[num][0] + pc.name + at.finall[num][1])
+        pc.possition.description = random.choice(at.after)
+        at_m = []
+    else:
+        text = random.choice(at.attack)
+        print(f"{text}{damage} points of damage.")
+    
+    return monster, at_m
+
+
 def play(players, tiles, monster): # To long
-    encounterd_monster = False
-    at_monster = []
+    encounter = False
+    at_m = []
     dead = []
     print(f'\n\n----------- oOo -----------')
     print(at.start)
-    #print_map(tiles)
+    print_map(tiles)
+    input()
     
     while True:
-        for player in players:
-            dir_list = list(player.possition.doors.keys())
-            dir_list, directions = get_directions(dir_list, monster, player)
+        for pc in players:
+            dir_list = list(pc.possition.doors.keys())
+            dir_list, directions = get_directions(dir_list, monster, pc)
             
-            print(f'\n----------- {player.name} -----------')
-            print(f'\n{player.name}s turn. You can go {directions}.')
+            print(f'\n----------- {pc.name} -----------')
+            print(f'\n{pc.name}s turn. You can go {directions}.')
             choise = player_choise(dir_list, 'Choose what to do: ')
             
+            if choise == 'Leave':
+                return True, dead
+            
             if choise in ['North', 'South', 'East', 'West']:
-                if player.possition.type == 'M':
-                    at_monster.remove(player)
-                player.possition = player.possition.doors[choise]
-                
-                if not encounterd_monster and player.possition.type == 'M':
-                    print(random.choice(at.first))
-                    encounterd_monster = True
-                else:
-                    print(player.possition.description)
-                
-                if player.possition.type == 'T':
+                a = move_pc(pc, players, at_m, encounter, choise, monster)
+                at_m, encounter = a
+                if pc.possition.type == 'T':
                     print_map(tiles)
-                elif player.possition.type == 'M':
-                    at_monster.append(player)
-            elif choise == 'Leave':
-                return True, players, dead
+            elif choise == 'Abillity':
+                use_abillity(players, pc)
             else:
-                #print('You shake in your boots!')
-                damage = random.randint(1, 6)
-                monster -= damage
-                if monster <= 0:
-                    num = random.randint(0, len(at.finall) - 1)
-                    print(at.finall[num][0] + player.name + at.finall[num][1])
-                    player.possition.description = random.choice(at.after)
-                    player.possition.type = ''
-                    at_monster = []
-                else:
-                    text = random.choice(at.attack)
-                    print(f"{text}{damage} points of damage.")
+                monster, at_m = attack(pc, monster, at_m)
             input()
         
-        if at_monster:
-            damage = random.randint(1, 6)
-            at_monster[0].injured(damage)
+        if at_m and len(players + dead) > 2:
+            damage1 = random.randint(1, 10)
+            damage2 = random.randint(1, 10)
+            text2 = ''
             
-            text = f' dealing {damage} points of damage.'
+            if len(at_m) > 1 and random.randint(0, 1):
+                text = f' dealing {damage1} points of damage.' #TODO
+                text2 = f' dealing {damage2} points of damage.' #TODO
+            else:
+                text = f' dealing {damage1 + damage2} points of damage.' #TODO
+            
             print('\n/\\/\\/\\/\\/\\/ Monster \\/\\/\\/\\/\\/\\\n')
-            print(random.choice(at.m_attack) + at_monster[0].name + text)
+            print(random.choice(at.m_attack) + at_m[0].name + text)
+            if text2:
+                print(random.choice(at.m_attack) + at_m[1].name + text2)
+                at_m[0].injured(damage1)
+                at_m[1].injured(damage2)
+            else:
+                at_m[0].injured(damage1 + damage2)
             
-            if at_monster[0].health <= 0:
-                print(f'{at_monster[0].name} died.')
-                dead.append(at_monster[0].name)
-                players.remove(at_monster[0])
-                at_monster.remove(at_monster[0])
-                if not players:
-                    return False, players, dead
+            if not at_m[0].alive:
+                dead.append(at_m[0])
+                players.remove(at_m[0])
+                at_m.remove(at_m[0])
+            
+            if text2 and not at_m[1].alive:
+                dead.append(at_m[0])
+                players.remove(at_m[0])
+                at_m.remove(at_m[0])
+            
+            if not players:
+                print(monster)
+                return False, dead
+            
             input()
+        elif at_m:
+            damage = random.randint(1, 10)
+            text = f' dealing {damage} points of damage.' #TODO
+            print('\n/\\/\\/\\/\\/\\/ Monster \\/\\/\\/\\/\\/\\\n')
+            print(random.choice(at.m_attack) + at_m[0].name + text)
+            at_m[0].injured(damage)
+            
+            if not at_m[0].alive:
+                dead.append(at_m[0])
+                players.remove(at_m[0])
+                at_m.remove(at_m[0])
+            
+            if not players:
+                print(monster)
+                return False, dead
+            
+            input()
+        
+        for pc in players:
+            if pc.resistance:
+                pc.resistance -= 1
+                if not pc.resistance:
+                    print(f'-- {pc.name}s resistance ended. --')
 
 
-if __name__ == '__main__':
-    players, tiles, monster = setupp()
-    won, players, dead = play(players, tiles, monster)
+def end(won, dead):
     print(f'\n----------- oOo -----------')
     if not dead:
         print(random.choice(at.triumf))
     elif won:
         if len(dead) > 2:
-            names = f's {dead[0]}, {dead[1]} and {dead[2]}'
+            names = f's {dead[0].name}, {dead[1].name} and {dead[2].name}'
         elif len(dead) > 1:
-            names = f's {dead[0]} and {dead[1]}'
+            names = f's {dead[0].name} and {dead[1].name}'
         else:
-            names = f' {dead[0]}'
+            names = f' {dead[0].name}'
         num = random.randint(0, len(at.viktory) - 1)
         print(at.viktory[num][0] + names + at.viktory[num][1])
     else:
         print(random.choice(at.defeat))
+
+
+if __name__ == '__main__':
+    players, tiles, monster = setupp()
+    win, dead = play(players, tiles, monster)
+    end(win, dead)

@@ -1,6 +1,12 @@
+instructions = 'Controlls:\nN, E, S and W: Move in the choosen direction\nF: Fight the monster\nL: Leave the dungeon\nA: Use your abillety\nEnter: To end the turn after you read the text\n\nThere are three classes:\nPaladins have 40 to 50 points of health, deal one d6 of damage and has the ability to heal\nWariors have 25 to 35 points of health, deal one d6 pluss one d4 of damage and has the ability NOT DECIDED YET\nWarlocks have 10 to 20 points of health, deal one d10 pluss one d10 of damage and has the ability to make one player resistent to damage\n\nThe monster has twice as much hp as the party. It attacks with one d10 if there is 1-2 players and attacks two d10s if there is 3-4 players\n\n'
+
 start = '\nYou dropp down in the middle of an empty room. There are four dark doorways, one on each wall.'
 
 r_desc = ['You enter a big empty room.', 'You enter a small cave with some water trickeling down the wall.']
+
+togeter = [' are all here.']
+
+meet = [' just walked in.']
 
 first = ['You enter a big room with a hole in the roof. The light from outside shines in at a corner where a giant monster rests.\nThe monster notices you and roars.']
 
