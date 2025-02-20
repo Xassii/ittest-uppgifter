@@ -7,11 +7,18 @@ class game_state:
         self.__turns = turns
         self.__turn = 0
         self.players = p
-        self.__dead = []
+        self.dead = []
         self.current = self.players[0]
         self.__tiles = tiles
         self.__map = self.__create_map()
         self.__monster_str = self.__determen_strength()
+    
+    def __str__(self):
+        text = f'\nMonster HP: {self.monster['hp']}\nPlayers:'
+        for pc in self.players + self.dead:
+            text += f'\n-{str(pc)}'
+        text += '\nMap:'
+        return text
         
     def __determen_strength(self):
         if len(self.players) > 2:
@@ -37,7 +44,7 @@ class game_state:
     
     def __check_dead(self, pc):
         if not pc.alive:
-            self.__dead.append(pc)
+            self.dead.append(pc)
             self.players.remove(pc)
             self.monster['p_at'].remove(pc)
             self.__turn = -1
@@ -45,12 +52,13 @@ class game_state:
     def m_attack(self):
         damage2 = 0
         at_m = self.monster['p_at']
-        if self.__monster_str > 2:
+        if self.__monster_str == 2:
             damage1 = random.randint(1, 10)
             damage2 = random.randint(1, 10)
-        elif self.__monster_str > 1:
+        elif self.__monster_str == 1:
             damage1 = random.randint(1, 10)
         else:
+            print(self.__monster_str)
             damage1 = random.randint(1, 6)
         
         print('\n/\\/\\/\\/\\/\\/ Monster \\/\\/\\/\\/\\/\\\n')
@@ -72,7 +80,7 @@ class game_state:
     def together_with_current(self):
         together = []
         for pc in self.players:
-            if not self and self.current.possition == pc.possition:
+            if pc != self.current and self.current.possition == pc.possition:
                 together.append(pc)
         
         return together

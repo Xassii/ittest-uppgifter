@@ -13,12 +13,12 @@ class player:
     
     def __str__(self):
         if self.alive:
-            text = f"{self.name}s the {self.role} is dead."
-        else:
-            text = f"{self.name}s the {self.role} has {self.health} out of "
+            text = f"{self.name} the {self.role} has {self.health} out of "
             text += f"{self.max_health} points of health."
             if self.resistance:
                 text += f" They have resistance."
+        else:
+            text = f"{self.name}s the {self.role} is dead."
             
         return text
     

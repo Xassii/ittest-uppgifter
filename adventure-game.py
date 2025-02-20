@@ -84,7 +84,7 @@ def connect_tiles(tiles):
 
 def create_tiles(): #This aint great
     tiles = []
-    tiles.append(room(0, 0, 'You return to the start'))
+    tiles.append(room(0, 0, 'You return to the start.'))
     for x, y in [[-1, 0], [0, -1], [1, 0], [0, 1]]:
         text = random.choice(at.r_desc)
         tiles.append(room(x, y, text))
@@ -139,10 +139,10 @@ def setupp():
     
     game = game_state(monster_health, player_num, players, tiles)
     
-    return game #players, tiles, monster_health
+    return game
 
 
-def get_directions(dir_list, game):
+def get_directions(dir_list, game): #TODO Add rest option
     directions = ''
     m_hp = game.monster['hp']
     pc = game.current
@@ -179,40 +179,7 @@ def player_choise(possebileties, text):
         choise = input(text)
         if choise and choise[0].upper() in poss:
             return poss[choise[0].upper()]
-        print(f'You need to chose {poss}.')
-
-
-def print_map(rooms):
-    x_pos = []
-    y_pos = []
-    type = []
-    map = []
-    
-    for room in rooms:
-        x_pos.append(room.possition[0])
-        y_pos.append(room.possition[1])
-        type.append(room.type)
-    
-    x_pos = [x - min(x_pos) for x in x_pos]
-    y_pos = [y - min(y_pos) for y in y_pos]
-    
-    size_x = max(x_pos) + 1
-    size_y = max(y_pos) + 1
-    
-    for i in range(size_x):
-        map.append([])
-        for j in range(size_y):
-            map[i].append('■')
-    
-    for x, y, t in zip(x_pos, y_pos, type):
-        if t:
-            map[x][y] = t
-        else:
-            map[x][y] = '□'
-    
-    map.reverse()
-    for i in map:
-        print(' '.join(i))
+        print(f'You need to chose {poss}.') #TODO print nicer
 
 
 def move_pc(game, encounter, towards):
@@ -233,7 +200,7 @@ def move_pc(game, encounter, towards):
         if len(together) > 2:
             text += f' {together[0].name}, {together[1].name} and '
             text += f'{together[2].name}' + random.choice(at.togeter)
-        if len(together) > 1:
+        elif len(together) > 1:
             text += f' {together[0].name} and {together[1].name}'
             text += random.choice(at.togeter)
         elif together:
@@ -247,7 +214,8 @@ def move_pc(game, encounter, towards):
     return encounter
 
 
-def use_abillity(game, pc):
+def use_abillity(game):
+    pc = game.current
     together = game.together_with_current()
     if together:
         text = 'Choose who to use your abillity on:\n'
@@ -266,23 +234,25 @@ def use_abillity(game, pc):
 
 
 def attack(game):
-    pc = game.current
     #print('You shake in your boots!')
+    pc = game.current
     damage = pc.attack()
     game.monster['hp'] -= damage
     
-    if game.monster['hp'] <= 0:
+    if game.monster['hp'] <= 0: #TODO diffrent text depending on class
         num = random.randint(0, len(at.finall) - 1)
         print(at.finall[num][0] + pc.name + at.finall[num][1])
         pc.possition.description = random.choice(at.after)
         game.monster['p_at'] = []
-    else:
+    else: #TODO diffrent text depending on class
         text = random.choice(at.attack)
         print(f"{text}{damage} points of damage.")
 
 
-def end(won, dead):
+def end(won, game):
+    dead = game.dead
     print(f'\n----------- oOo -----------')
+    
     if not dead:
         print(random.choice(at.triumf))
     elif won:
@@ -298,19 +268,19 @@ def end(won, dead):
         print(random.choice(at.defeat))
 
 
-def play():#players, tiles, monster): # To long
+def play(): # To long
     game = setupp()
     encounter = False
-    #at_m = []
-    #dead = []
     print(f'\n\n----------- oOo -----------')
     print(at.start)
-    game.print_map()
+    #print(game)
+    #game.print_map()
     input()
     
     while True:
         if isinstance(game.current, dict):
-            if not game.current['p_at']: # if no players at monster
+            if not game.current['p_at']: #if no players at monster
+                game.reduce_ressistance()
                 game.next_turn()
                 continue
             
@@ -320,6 +290,7 @@ def play():#players, tiles, monster): # To long
             if not game.players:
                 end(False, game)
                 return None
+            game.reduce_ressistance()
         else:
             pc = game.current
             dir_list = list(pc.possition.doors.keys())
@@ -338,13 +309,12 @@ def play():#players, tiles, monster): # To long
                 if pc.possition.type == 'T':
                     game.print_map()
             elif choise == 'Abillity':
-                use_abillity(game. pc)
+                use_abillity(game)
             else:
                 attack(game)
             input()
         
         game.next_turn()
-        game.reduce_ressistance()
 
 
 if __name__ == '__main__':
